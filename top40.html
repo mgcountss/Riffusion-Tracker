@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="@ok_aj">
+    <meta name="theme-color" content="#141414">
+    <link rel="stylesheet" type="text/css" href="./utils/odometer.css">
+
+    <title>Top 40 Songs on Riffusion</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #141414;
+            margin: 0;
+            transition: background 1.5s;
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+
+        .num {
+            font-family: 'Roboto', roboto;
+            float: left;
+            font-weight: 900;
+            margin-right: 0.2vw;
+            margin-left: 0.2vw;
+            height: 100%;
+        }
+
+        .card {
+            height: 9.8vh;
+            padding: 0.1vw;
+            margin: 1px;
+            text-align: left;
+            background: #f4f4f8;
+            border: 0.1em solid #ffffff;
+            transition: margin-top 500ms;
+            position: relative;
+            font-family: 'Roboto', sans-serif;
+            max-width: 100%;
+        }
+
+        .image {
+            height: 9.3vh;
+            width: 9.3vh;
+            float: left;
+            border-radius: 50%;
+            z-index: 10;
+            border: solid 0.1vw #000;
+        }
+
+        .count {
+            transition: color 2s;
+            font-size: 2.3vw;
+            padding-left: 0.2vw;
+            margin-top: 0;
+        }
+
+        .name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-left: 0.1vw;
+            font-size: 1.5vw;
+            margin-bottom: 0;
+            max-width: 20vw;
+        }
+
+        .loader {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            z-index: 1;
+            width: 120px;
+            height: 120px;
+            margin: -75px 0 0 -75px;
+            border: 16px solid #ffffff;
+            border-radius: 50%;
+            border-top: 16px solid #69db34;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+        }
+
+        .card:hover {
+            cursor: pointer;
+            background-color: #bed3f1;
+        }
+
+        .counters {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0px;
+        }
+
+        a {
+            color: #FFF;
+        }
+
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .count {
+                margin-top: -2vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <center>
+        <div class="loader"></div>
+        <div class="counters"></div>
+        <br><a href="https://riffusion.mgcounts.com/">Other Counters</a><br><br>
+    </center>
+</body>
+
+<script src="./utils/jquery.js"></script>
+<script src="./utils/odometer.js"></script>
+<script>
+    var c = 1;
+    var counts = Array(40).fill(0);
+    var ids = [];
+    var first = true;
+
+    for (var l = 1; l <= 4; l++) {
+        var htmlrow = `<div class="row_${l} row"></div>`;
+        $('.counters').append(htmlrow);
+        for (var t = 1; t <= 10; t++) {
+            var cc = ""
+            if (c < 10) { cc = "0" + c; } else { cc = c; }
+            var htmlcard = `<div class="channel_${c} card" id="card_thing_${c}" onclick="">
+      <div class="num">${cc}</div>
+      <img src="" class="image" id="img_${c}">
+      <div class="name">Loading...</div>
+      <div class="count odometer" id="count_${c}">0</div>
+      </div>`;
+            $('.row_' + l).append(htmlcard);
+            c += 1;
+        }
+    }
+
+    function updateData(q, data) {
+        return setTimeout(function () {
+            var cnb = q + 1;
+            if (document.getElementById("img_" + cnb + "").src != 'https://api.riffusion.com/storage/v1/object/public/riffs/' + data.author_id + "/image/" + data.image_id + ".jpg") {
+                document.getElementById("img_" + cnb + "").src = 'https://api.riffusion.com/storage/v1/object/public/riffs/' + data.author_id + "/image/" + data.image_id + ".jpg";
+            }
+            $(".channel_" + cnb + " .name").html(data.title);
+            $(".channel_" + cnb + " .count").html(Math.floor(data.play_count));
+            document.getElementById('card_thing_' + cnb).onclick = function () { window.open("https://www.riffusion.com/riff/" + data.id, "_blank") };
+            if (!(counts[q] == data.play_count)) {
+                if (counts[q] > data.play_count) {
+                    colorSwap(cnb, "#f8d7da");
+                };
+                if (counts[q] < data.play_count) {
+                    colorSwap(cnb, "#c9e8d0")
+                };
+                setTimeout(function () { colorSwap(cnb, ""); }, 1000);
+            }
+            counts[q] = data.play_count;
+        }, q * 250);
+    }
+
+    function updateChannels() {
+        fetch("https://wb.riffusion.com/v2/featured/all?limit=60", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(data => data.json()).then(dataIDs => {
+            ids = [];
+            for (var q = 0; q < 40; q++) {
+                ids.push(dataIDs[q].id);
+            }
+            fetch("https://wb.riffusion.com/v2/generations", {
+                "headers": {
+                    "accept": "*/*",
+                    "content-type": "application/json"
+                },
+                "body": JSON.stringify({
+                    "riff_ids": ids
+                }),
+                "method": "POST",
+            }).then(data => data.json()).then(data => {
+                data = data.generations;
+                data = data.sort((a, b) => b.play_count - a.play_count);
+                for (var q = 0; q < 40; q++) {
+                    updateData(q, data[q]);
+                }
+                if (first) {
+                    setTimeout(function () { $('.loader').fadeOut(); $('.counters').fadeIn(1); }, 1)
+                    first = false;
+                }
+            });
+        });
+    };
+    updateChannels();
+    setInterval(updateChannels, 5000);
+
+    function colorSwap(cnb, color) {
+        document.getElementById("card_thing_" + cnb + "").style.backgroundColor = color;
+    }
+</script>
+
+</html>

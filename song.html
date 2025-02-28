@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiffTracker</title>
+    <link rel="stylesheet" href="./utils/odometer.css" />
+    <script src="./utils/odometer.js"></script>
+    <script src="./utils/highcharts.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        a {
+            color: #FFF;
+        }
+
+        .song-container {
+            text-align: center;
+        }
+
+        .odometer {
+            font-size: 2rem;
+        }
+
+        .wave-bar {
+            width: 5px;
+            background-color: #1db954;
+        }
+
+        #image-container {
+            width: 90vw;
+            height: 250px;
+            box-shadow: 0 0 3px 3px rgba(255, 255, 255, 0.7);
+            border-radius: 25px;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .song-image {
+            margin-top: 25px;
+            width: 200px;
+            height: 200px;
+            border-radius: 25px;
+            box-shadow: 0 0 7px 5px rgba(255, 255, 255, 0.7);
+        }
+
+        #song-title {
+            font-size: 2em;
+            margin-top: 5px;
+            margin-bottom: 0px;
+        }
+
+        #play-count,
+        #favorite-count {
+            margin-top: 5px;
+            font-size: 5em;
+            margin-bottom: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        #author {
+            display: flex;
+            margin-top: 20px;
+            color: #FFF;
+        }
+
+        .left {
+            text-align: left;
+            margin-left: 15px;
+        }
+
+        #author-image {
+            border-radius: 50%;
+            height: 35px;
+            width: 35px;
+            border: solid #FFF 1px;
+            box-shadow: 0 0 7px 5px rgba(255, 255, 255, 0.7);
+        }
+
+        .section {
+            font-weight: bold;
+            color: pink;
+        }
+
+        .side-lyrics {
+            color: #00FFFF;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="song-container">
+        <div id="image-container">
+            <img src="" alt="Song Image" class="song-image" id="song-image">
+        </div>
+        <h1 id="song-title">Loading...</h1>
+        <div class="grid">
+            <div>
+                <div class="odometer" id="play-count">0</div>
+                <br><label>Plays</label>
+                <div id="chart-container1"></div>
+            </div>
+            <div>
+                <div class="odometer" id="favorite-count">0</div>
+                <br><label>Favorites</label>
+                <div id="chart-container2"></div>
+            </div>
+        </div>
+        <hr>
+        <div class="grid">
+            <pre id="song-lyrics">Loading lyrics...</pre>
+            <div class="left">
+                <a href="" id="author-url">
+                    <div id="author">
+                        <img src="" alt="Author Image" id="author-image">
+                        <div class="left">
+                            <strong id="author-name">...</strong><br>
+                            <label id="author-bio">...</label>
+                        </div>
+                    </div>
+                </a>
+                <p>Song Duration: <strong id="song-duration">0s</strong></p>
+                <p id="sounds-div">Song's Sounds: <strong id="sounds">...</strong></p>
+                <p id="privacy-div">Song Privacy: <strong id="privacy">...</strong></p>
+                <hr>
+                <a href="https://www.riffusion.com/riff/688d5973-4bbc-4518-afc9-647e7a43a0aa" id="song">Listen To Song</a>
+                <br><a href="/">Back To Search</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let id = "688d5973-4bbc-4518-afc9-647e7a43a0aa";
+        if (window.location.href.includes('?')) {
+            id = window.location.href.split('?')[1];
+        }
+        function displayLyrics(lyrics) {
+            const container = document.getElementById('song-lyrics');
+            const lines = lyrics.split('\n');
+            container.innerHTML = lines.map(line => {
+                if (line.startsWith('[') && line.endsWith(']')) {
+                    return `<div class="section">${line}</div>`;
+                } else if (line.trim() === '') {
+                    return '<br>';
+                } else {
+                    return `<div class="main-lyrics">${line.replace(/\(([^)]+)\)/g, '<span class="side-lyrics">($1)</span>')}</div>`;
+                }
+            }).join('');
+        }
+
+        const createChart = (container, name) => {
+            return new Highcharts.Chart({
+                chart: {
+                    renderTo: container,
+                    type: 'areaspline',
+                    zoomType: 'x',
+                    backgroundColor: 'transparent',
+                    plotBorderColor: 'transparent'
+                },
+                responsive: {
+                    rules: [{
+                        condition: {
+                            maxWidth: 600
+                        },
+                        chartOptions: {
+                            chart: {
+                                height: 200
+                            }
+                        }
+                    }]
+                },
+                xAxis: {
+                    visible: false,
+                    type: 'datetime'
+                },
+                yAxis: {
+                    title: {
+                        text: ''
+                    },
+                    visible: false
+                },
+                title: {
+                    text: ' '
+                },
+                credits: {
+                    enabled: false,
+                },
+                plotOptions: {
+                    series: {
+                        threshold: null,
+                        fillOpacity: 0.25
+                    },
+                    area: {
+                        fillOpacity: 0.05
+                    }
+                },
+                series: [{
+                    showInLegend: false,
+                    name,
+                    marker: { enabled: false },
+                    color: '#FFF',
+                    lineColor: '#FFF',
+                    lineWidth: 5
+                }]
+            });
+        };
+
+        const chart1 = createChart('chart-container1', 'Plays');
+        const chart2 = createChart('chart-container2', 'Favorites');
+
+        let userLoaded = false;
+        function loadData() {
+            fetch('https://wb.riffusion.com/v2/generations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ riff_ids: [id] })
+            }).then(res => res.json()).then(response => {
+                const data = response.generations[0];
+
+                document.getElementById('song-image').src = 'https://api.riffusion.com/storage/v1/object/public/riffs/' + data.author_id + '/image/' + data.image_id + '.jpg';
+                document.getElementById('image-container').style.backgroundImage = "url('https://api.riffusion.com/storage/v1/object/public/riffs/" + data.author_id + "/image/" + data.image_id + ".jpg')";
+                document.getElementById('song-title').textContent = data.title;
+                document.getElementById('song-duration').textContent = `${data.duration_s}s`;
+                if (!data.sound && document.getElementById('sounds-div')) {
+                    document.getElementById('sounds-div').remove();
+                } else if (data.sound && document.getElementById('sounds-div')) {
+                    document.getElementById('sounds').textContent = data.sound;
+                }
+
+                document.getElementById('privacy').textContent = data.privacy[0].toUpperCase() + '' + data.privacy.slice(1);
+                document.getElementById('play-count').innerText = data.play_count;
+                document.getElementById('favorite-count').innerText = data.favorite_count;
+
+                chart1.series[0].addPoint([new Date().getTime(), data.play_count]);
+                chart2.series[0].addPoint([new Date().getTime(), data.favorite_count]);
+
+                document.getElementById('song').href = "https://www.riffusion.com/riff/"+id;
+
+                getUser(data.author_id);
+
+                displayLyrics(data.lyrics)
+            });
+        }
+
+        loadData();
+        setInterval(loadData, 2000);
+
+        function getUser(id) {
+            if (userLoaded) { return } else { userLoaded = true; }
+
+            fetch('https://wb.riffusion.com/users/profile/' + id)
+                .then(res => res.json())
+                .then(data1 => {
+                    fetch('https://riff-api.mgcounts.com/user/' + id)
+                        .then(res => res.json())
+                        .then(data2 => {
+                            document.getElementById('author-name').innerText = data2.username;
+                            document.getElementById('author-bio').innerText = data1.bio;
+                            document.getElementById('author-url').href = "/user?" + data1.id;
+
+                            const img = new Image();
+                            img.onload = () => {
+                                document.getElementById('author-image').src = 'https://api.riffusion.com/storage/v1/object/public/user-metadata/' + data1.id + '/profile.jpg';
+                            };
+                            img.onerror = () => {
+                                document.getElementById('author-image').src = "https://www.riffusion.com/default-profile-images/00.png"
+                            };
+                            img.src = 'https://api.riffusion.com/storage/v1/object/public/user-metadata/' + data1.id + '/profile.jpg';
+                        })
+                })
+        }
+    </script>
+</body>
+
+</html>

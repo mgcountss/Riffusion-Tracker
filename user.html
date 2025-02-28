@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiffTracker</title>
+    <link rel="stylesheet" href="./utils/odometer.css" />
+    <script src="./utils/odometer.js"></script>
+    <script src="./utils/highcharts.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        a {
+            color: #FFF;
+        }
+
+        .user-container {
+            text-align: center;
+        }
+
+        .odometer {
+            font-size: 2rem;
+        }
+
+        .wave-bar {
+            width: 5px;
+            background-color: #1db954;
+        }
+
+        #image-container {
+            width: 90vw;
+            height: 250px;
+            box-shadow: 0 0 3px 3px rgba(255, 255, 255, 0.7);
+            border-radius: 25px;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .author-image {
+            margin-top: 25px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            box-shadow: 0 0 7px 5px rgba(255, 255, 255, 0.7);
+        }
+
+        #user-title {
+            font-size: 2em;
+            margin-top: 5px;
+            margin-bottom: 0px;
+        }
+
+        #play-count,
+        #like-count,
+        #points-count,
+        #followers-count {
+            margin-top: 5px;
+            font-size: 5em;
+            margin-bottom: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        #author {
+            display: flex;
+            margin-top: 20px;
+            color: #FFF;
+        }
+
+        .left {
+            text-align: left;
+            margin-left: 15px;
+        }
+
+        .section {
+            font-weight: bold;
+            color: pink;
+        }
+
+        .side-lyrics {
+            color: #00FFFF;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="user-container">
+        <div id="image-container">
+            <img src="" alt="User Image" class="author-image" id="author-image">
+        </div>
+        <h1 id="user-title">Loading...</h1>
+        <div class="grid">
+            <div>
+                <div class="odometer" id="play-count">0</div>
+                <br><label>Plays</label>
+                <div id="chart-container1"></div>
+            </div>
+            <div>
+                <div class="odometer" id="like-count">0</div>
+                <br><label>Likes</label>
+                <div id="chart-container2"></div>
+            </div>
+            <div>
+                <div class="odometer" id="points-count">0</div>
+                <br><label>Points</label>
+                <div id="chart-container3"></div>
+            </div>
+            <div>
+                <div class="odometer" id="followers-count">0</div>
+                <br><label>Followers</label>
+                <div id="chart-container4"></div>
+            </div>
+        </div>
+        <hr>
+        <div>
+            <p>Bio: <strong id="bio"></strong></p>
+            <p>Following: <strong class="odometer" id="following"></strong></p>
+            <p>Published Songs: <strong class="odometer" id="published-songs"></strong></p>
+            <p>Published Playlists: <strong class="odometer" id="published-playlists"></strong></p>
+            <p>Level: <strong id="level"></strong></p>
+            <p>Longest Streak: <strong class="odometer" id="longest-streak"></strong></p>
+            <hr>
+            <a href="https://www.riffusion.com/profile/3375489e-f2f8-4740-ab91-7e6012abe572" id="profile">Visit Profile</a>
+            <br><a href="/">Back To Search</a>
+        </div>
+    </div>
+
+    <script>
+        let id = "3375489e-f2f8-4740-ab91-7e6012abe572";
+        if (window.location.href.includes('?')) {
+            id = window.location.href.split('?')[1];
+        }
+
+        const createChart = (container, name) => {
+            return new Highcharts.Chart({
+                chart: {
+                    renderTo: container,
+                    type: 'areaspline',
+                    zoomType: 'x',
+                    backgroundColor: 'transparent',
+                    plotBorderColor: 'transparent'
+                },
+                responsive: {
+                    rules: [{
+                        condition: {
+                            maxWidth: 600
+                        },
+                        chartOptions: {
+                            chart: {
+                                height: 200
+                            }
+                        }
+                    }]
+                },
+                xAxis: {
+                    visible: false,
+                    type: 'datetime'
+                },
+                yAxis: {
+                    title: {
+                        text: ''
+                    },
+                    visible: false
+                },
+                title: {
+                    text: ' '
+                },
+                credits: {
+                    enabled: false,
+                },
+                plotOptions: {
+                    series: {
+                        threshold: null,
+                        fillOpacity: 0.25
+                    },
+                    area: {
+                        fillOpacity: 0.05
+                    }
+                },
+                series: [{
+                    showInLegend: false,
+                    name,
+                    marker: { enabled: false },
+                    color: '#FFF',
+                    lineColor: '#FFF',
+                    lineWidth: 5
+                }]
+            });
+        };
+
+        const chart1 = createChart('chart-container1', 'Plays');
+        const chart2 = createChart('chart-container2', 'Likes');
+        const chart3 = createChart('chart-container3', 'Points');
+        const chart4 = createChart('chart-container4', 'Followers');
+
+        let userLoaded = false;
+        function loadData() {
+            fetch('https://riff-api.mgcounts.com/stats/' + id)
+                .then(res => res.json()).then(response => {
+                    const data = response.data[id]
+
+                    document.getElementById('play-count').innerText = data.plays;
+                    document.getElementById('like-count').innerText = data.likes;
+                    document.getElementById('points-count').innerText = data.points;
+                    document.getElementById('followers-count').innerText = data.followers;
+
+                    chart1.series[0].addPoint([new Date().getTime(), data.plays]);
+                    chart2.series[0].addPoint([new Date().getTime(), data.likes]);
+                    chart3.series[0].addPoint([new Date().getTime(), data.points]);
+                    chart4.series[0].addPoint([new Date().getTime(), data.followers]);
+
+                    document.getElementById('longest-streak').innerText = data.create_longest_streak + " days";
+                    document.getElementById('level').innerText = data.level[0].toUpperCase() + '' + data.level.slice(1);
+
+                    document.getElementById('published-songs').innerText = data.published;
+                    document.getElementById('published-playlists').innerText = data.published_playlists;
+
+                    document.getElementById('profile').href = "https://www.riffusion.com/profile/"+id;
+                });
+            getUser(id)
+        }
+
+        loadData();
+        setInterval(loadData, 2000);
+
+        function getUser(id) {
+            if (userLoaded) { return } else { userLoaded = true; }
+
+            fetch('https://wb.riffusion.com/users/profile/' + id)
+                .then(res => res.json())
+                .then(data1 => {
+                    document.getElementById('bio').innerText = data1.bio;
+
+                    const avatar = new Image();
+                    avatar.onload = () => {
+                        document.getElementById('author-image').src = "https://api.riffusion.com/storage/v1/object/public/user-metadata/" + id + "/profile.jpg";
+                    }
+                    avatar.onerror = () => {
+                        document.getElementById('author-image').src = "https://www.riffusion.com/default-profile-images/00.png";
+                    };
+                    avatar.src = "https://api.riffusion.com/storage/v1/object/public/user-metadata/" + id + "/profile.jpg";
+
+                    const banner = new Image();
+                    banner.onload = () => {
+                        document.getElementById('image-container').style.backgroundImage = "url('https://api.riffusion.com/storage/v1/object/public/user-metadata/" + id + "/cover/" + data1.cover_image_id + ".jpg')";
+                    }
+                    banner.onerror = () => {
+                        document.getElementById('image-container').src = "https://www.riffusion.com/default-profile-images/00.png";
+                    };
+                    banner.src = "https://api.riffusion.com/storage/v1/object/public/user-metadata/" + id + "/cover/" + data1.cover_image_id + ".jpg";
+                })
+
+            fetch('https://riff-api.mgcounts.com/user/' + id)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('user-title').innerText = data.username;
+                })
+        }
+    </script>
+</body>
+
+</html>
